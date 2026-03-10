@@ -65,7 +65,7 @@ Ionic React frontend for the Stock Tracker demo app. Built with Capacitor, Cordo
 | `/login` | Login | Email/password form, stores JWT in localStorage |
 | `/dashboard` | Dashboard | Portfolio summary card, list of tracked stocks with prices |
 | `/add-stock` | Add Stock | Search bar, results list, tap to add stock to portfolio |
-| `/stock/:symbol` | Stock Detail | SVG price chart, stats (market cap, volume, 52w high/low), remove button |
+| `/stock/:symbol` | Stock Detail | SVG price chart, stats, personal stock notes (create/edit/delete), remove button |
 
 ## Scripts
 

@@ -71,9 +71,25 @@ export const StockDetailResponseSchema = z.object({
   price_history: z.array(PriceHistoryPointSchema),
 });
 
+export const StockNoteSchema = z.object({
+  id: z.number(),
+  content: z.string(),
+  created_at: z.string().nullable(),
+  updated_at: z.string().nullable(),
+});
+
+export const StockNotesResponseSchema = z.object({
+  notes: z.array(StockNoteSchema),
+});
+
+export const StockNoteMutationResponseSchema = z.object({
+  note: StockNoteSchema,
+});
+
 export type StockSearchResult = z.infer<typeof StockSearchResultSchema>;
 export type PortfolioStock = z.infer<typeof PortfolioStockSchema>;
 export type PortfolioSummary = z.infer<typeof PortfolioSummarySchema>;
 export type PortfolioResponse = z.infer<typeof PortfolioResponseSchema>;
 export type PriceHistoryPoint = z.infer<typeof PriceHistoryPointSchema>;
 export type StockDetailResponse = z.infer<typeof StockDetailResponseSchema>;
+export type StockNote = z.infer<typeof StockNoteSchema>;
