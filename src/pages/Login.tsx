@@ -159,20 +159,6 @@ export default function Login() {
             {loginLoading ? <IonSpinner name="dots" /> : 'Sign In'}
           </IonButton>
 
-          {import.meta.env.DEV && (
-            <IonButton
-              expand="block"
-              fill="clear"
-              size="small"
-              style={{ marginTop: '8px', opacity: 0.5 }}
-              onClick={() => {
-                if (emailRef.current) emailRef.current.value = 'demo@example.com';
-                if (passwordRef.current) passwordRef.current.value = 'D3m0$tock!2025';
-              }}
-            >
-              Prefill demo login
-            </IonButton>
-          )}
         </div>
       </IonContent>
     </IonPage>
