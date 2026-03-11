@@ -31,6 +31,11 @@ const changeStyle = (positive: boolean) => css`
   color: ${positive ? '#69f0ae' : '#ff5252'};
 `;
 
+const arrowStyle = (positive: boolean) => css`
+  font-size: 0.9rem;
+  margin-right: 4px;
+`;
+
 export function PortfolioSummary({ portfolio }: PortfolioSummaryProps) {
   const { summary } = portfolio;
   const isPositive = summary.total_daily_change >= 0;
@@ -49,6 +54,7 @@ export function PortfolioSummary({ portfolio }: PortfolioSummaryProps) {
         <div css={valueStyle}>${summary.total_value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
         <div css={changeRow}>
           <span css={changeStyle(isPositive)}>
+            <span css={arrowStyle(isPositive)}>{isPositive ? '📈' : '📉'}</span>
             {isPositive ? '+' : ''}${summary.total_daily_change.toFixed(2)}
           </span>
           <span css={changeStyle(isPositive)}>
