@@ -19,10 +19,11 @@ import {
   IonSpinner,
   IonText,
 } from '@ionic/react';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useParams, useHistory } from 'react-router-dom';
 import { useStockDetail } from '../hooks/useStocks';
 import { usePortfolio } from '../hooks/usePortfolio';
+import { useStockNote } from '../hooks/useNotes';
 import { PriceChart } from '../components/PriceChart';
 
 const priceContainer = css`
@@ -108,6 +109,46 @@ const confirmBtn = css`
   cursor: pointer;
 `;
 
+const notesTextarea = css`
+  width: 100%;
+  min-height: 100px;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  resize: vertical;
+  background: var(--ion-background-color, #fff);
+  color: var(--ion-text-color, #333);
+  box-sizing: border-box;
+  &:focus {
+    outline: none;
+    border-color: var(--ion-color-primary, #3880ff);
+  }
+`;
+
+const notesActions = css`
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  justify-content: flex-end;
+`;
+
+const noteBtn = css`
+  padding: 6px 16px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+`;
+
+const noteSavedLabel = css`
+  font-size: 0.8rem;
+  color: #888;
+  margin-top: 4px;
+`;
+
 function formatLargeNumber(num: number): string {
   if (num >= 1_000_000_000_000) return `$${(num / 1_000_000_000_000).toFixed(2)}T`;
   if (num >= 1_000_000_000) return `$${(num / 1_000_000_000).toFixed(2)}B`;
@@ -120,7 +161,37 @@ export default function StockDetail() {
   const history = useHistory();
   const { data: detail, isLoading, error } = useStockDetail(symbol);
   const { removeStock, isRemoving } = usePortfolio();
+  const { note, saveNote, deleteNote, isSaving, isDeleting: isDeletingNote } = useStockNote(symbol);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [isEditingNote, setIsEditingNote] = useState(false);
+  const noteRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (isEditingNote && noteRef.current && note) {
+      noteRef.current.value = note.content;
+    }
+  }, [isEditingNote, note]);
+
+  const handleSaveNote = async () => {
+    const content = noteRef.current?.value?.trim();
+    if (!content) return;
+    try {
+      await saveNote(content);
+      setIsEditingNote(false);
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleDeleteNote = async () => {
+    try {
+      await deleteNote();
+      setIsEditingNote(false);
+      if (noteRef.current) noteRef.current.value = '';
+    } catch {
+      // ignore
+    }
+  };
 
   const handleRemove = async () => {
     setShowConfirm(false);
@@ -241,6 +312,73 @@ export default function StockDetail() {
                 <IonLabel slot="end" css={statValue}>{stock.sector}</IonLabel>
               </IonItem>
             </IonList>
+          </IonCardContent>
+        </IonCard>
+
+        <IonCard>
+          <IonCardHeader>
+            <IonCardTitle style={{ fontSize: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span>Notes</span>
+              {!isEditingNote && (
+                <button
+                  css={[noteBtn, css`background: var(--ion-color-primary, #3880ff); color: white;`]}
+                  onClick={() => setIsEditingNote(true)}
+                >
+                  {note ? 'Edit' : 'Add Note'}
+                </button>
+              )}
+            </IonCardTitle>
+          </IonCardHeader>
+          <IonCardContent>
+            {isEditingNote ? (
+              <div>
+                <textarea
+                  ref={noteRef}
+                  css={notesTextarea}
+                  placeholder="Write your notes about this stock..."
+                  defaultValue={note?.content || ''}
+                />
+                <div css={notesActions}>
+                  <button
+                    css={[noteBtn, css`background: #e0e0e0; color: #333;`]}
+                    onClick={() => setIsEditingNote(false)}
+                  >
+                    Cancel
+                  </button>
+                  {note && (
+                    <button
+                      css={[noteBtn, css`background: #f44336; color: white;`]}
+                      onClick={handleDeleteNote}
+                      style={isDeletingNote ? { opacity: 0.5, pointerEvents: 'none' as const } : undefined}
+                    >
+                      {isDeletingNote ? 'Deleting...' : 'Delete'}
+                    </button>
+                  )}
+                  <button
+                    css={[noteBtn, css`background: var(--ion-color-primary, #3880ff); color: white;`]}
+                    onClick={handleSaveNote}
+                    style={isSaving ? { opacity: 0.5, pointerEvents: 'none' as const } : undefined}
+                  >
+                    {isSaving ? 'Saving...' : 'Save'}
+                  </button>
+                </div>
+              </div>
+            ) : note ? (
+              <div>
+                <div style={{ whiteSpace: 'pre-wrap', fontSize: '0.95rem', lineHeight: 1.5 }}>
+                  {note.content}
+                </div>
+                {note.updated_at && (
+                  <div css={noteSavedLabel}>
+                    Last updated: {new Date(note.updated_at).toLocaleDateString()}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div style={{ color: '#888', fontStyle: 'italic', fontSize: '0.9rem' }}>
+                No notes yet. Tap "Add Note" to get started.
+              </div>
+            )}
           </IonCardContent>
         </IonCard>
 

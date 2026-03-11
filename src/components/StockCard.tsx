@@ -30,6 +30,13 @@ const nameStyle = css`
   color: #888;
 `;
 
+const noteIndicator = css`
+  display: inline-block;
+  font-size: 0.75rem;
+  color: var(--ion-color-primary, #3880ff);
+  margin-top: 2px;
+`;
+
 const priceStyle = css`
   text-align: right;
 `;
@@ -52,6 +59,7 @@ export function StockCard({ stock, onClick }: StockCardProps) {
             <div css={symbolStyle}>{stock.symbol}</div>
             <div css={nameStyle}>{stock.name}</div>
             <div css={nameStyle}>{stock.sector}</div>
+            {stock.has_note && <div css={noteIndicator}>Has note</div>}
           </div>
           <div css={priceStyle}>
             <div css={symbolStyle}>${parseFloat(stock.current_price).toFixed(2)}</div>

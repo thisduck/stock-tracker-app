@@ -29,6 +29,7 @@ export const PortfolioStockSchema = z.object({
   market_cap: z.number(),
   volume: z.number(),
   added_at: z.string().nullable(),
+  has_note: z.boolean().optional(),
 });
 
 export const PortfolioSummarySchema = z.object({
@@ -71,9 +72,23 @@ export const StockDetailResponseSchema = z.object({
   price_history: z.array(PriceHistoryPointSchema),
 });
 
+// Matches GET /api/notes/:symbol response
+export const StockNoteSchema = z.object({
+  id: z.number(),
+  content: z.string(),
+  created_at: z.string().nullable(),
+  updated_at: z.string().nullable(),
+});
+
+export const StockNoteResponseSchema = z.object({
+  note: StockNoteSchema.nullable(),
+});
+
 export type StockSearchResult = z.infer<typeof StockSearchResultSchema>;
 export type PortfolioStock = z.infer<typeof PortfolioStockSchema>;
 export type PortfolioSummary = z.infer<typeof PortfolioSummarySchema>;
 export type PortfolioResponse = z.infer<typeof PortfolioResponseSchema>;
 export type PriceHistoryPoint = z.infer<typeof PriceHistoryPointSchema>;
 export type StockDetailResponse = z.infer<typeof StockDetailResponseSchema>;
+export type StockNote = z.infer<typeof StockNoteSchema>;
+export type StockNoteResponse = z.infer<typeof StockNoteResponseSchema>;
