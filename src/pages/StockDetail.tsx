@@ -18,8 +18,9 @@ import {
   IonButton,
   IonSpinner,
   IonText,
+  IonTextarea,
 } from '@ionic/react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useHistory } from 'react-router-dom';
 import { useStockDetail } from '../hooks/useStocks';
 import { usePortfolio } from '../hooks/usePortfolio';
@@ -119,8 +120,27 @@ export default function StockDetail() {
   const { symbol } = useParams<{ symbol: string }>();
   const history = useHistory();
   const { data: detail, isLoading, error } = useStockDetail(symbol);
-  const { removeStock, isRemoving } = usePortfolio();
+  const { portfolio, removeStock, isRemoving, updateNote, isUpdatingNote } = usePortfolio();
   const [showConfirm, setShowConfirm] = useState(false);
+  const portfolioStock = portfolio?.stocks.find((s) => s.symbol === symbol);
+  const [noteText, setNoteText] = useState(portfolioStock?.note ?? '');
+  const [noteSaved, setNoteSaved] = useState(false);
+
+  useEffect(() => {
+    if (portfolioStock?.note !== undefined) {
+      setNoteText(portfolioStock.note ?? '');
+    }
+  }, [portfolioStock?.note]);
+
+  const handleSaveNote = async () => {
+    try {
+      await updateNote({ symbol, note: noteText || null });
+      setNoteSaved(true);
+      setTimeout(() => setNoteSaved(false), 2000);
+    } catch {
+      // ignore
+    }
+  };
 
   const handleRemove = async () => {
     setShowConfirm(false);
@@ -241,6 +261,30 @@ export default function StockDetail() {
                 <IonLabel slot="end" css={statValue}>{stock.sector}</IonLabel>
               </IonItem>
             </IonList>
+          </IonCardContent>
+        </IonCard>
+
+        <IonCard>
+          <IonCardHeader>
+            <IonCardTitle style={{ fontSize: '1rem' }}>Notes</IonCardTitle>
+          </IonCardHeader>
+          <IonCardContent>
+            <IonTextarea
+              value={noteText}
+              onIonInput={(e) => setNoteText(e.detail.value ?? '')}
+              placeholder="Add a personal note about this stock..."
+              rows={4}
+              style={{ '--background': 'var(--ion-color-light)', borderRadius: '8px', padding: '4px' }}
+            />
+            <IonButton
+              expand="block"
+              fill="solid"
+              style={{ marginTop: '12px' }}
+              onClick={handleSaveNote}
+              disabled={isUpdatingNote}
+            >
+              {isUpdatingNote ? <IonSpinner name="dots" /> : noteSaved ? 'Saved!' : 'Save Note'}
+            </IonButton>
           </IonCardContent>
         </IonCard>
 

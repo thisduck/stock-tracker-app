@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiGet, apiPost, apiDelete } from '../services/api';
+import { apiGet, apiPost, apiDelete, apiPatch } from '../services/api';
 import { PortfolioResponse, PortfolioResponseSchema } from '../types/stock';
 
 export function usePortfolio() {
@@ -30,13 +30,23 @@ export function usePortfolio() {
     },
   });
 
+  const updateNoteMutation = useMutation({
+    mutationFn: ({ symbol, note }: { symbol: string; note: string | null }) =>
+      apiPatch(`/api/portfolio/stocks/${symbol}/note`, { note }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['portfolio'] });
+    },
+  });
+
   return {
     portfolio: portfolioQuery.data || null,
     isLoading: portfolioQuery.isLoading,
     error: portfolioQuery.error?.message || null,
     addStock: addStockMutation.mutateAsync,
     removeStock: removeStockMutation.mutateAsync,
+    updateNote: updateNoteMutation.mutateAsync,
     isAdding: addStockMutation.isPending,
     isRemoving: removeStockMutation.isPending,
+    isUpdatingNote: updateNoteMutation.isPending,
   };
 }
