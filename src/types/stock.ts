@@ -1,6 +1,11 @@
 import { z } from 'zod';
 
-// Matches GET /api/stocks/search response item
+export const TagSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  color: z.string(),
+});
+
 export const StockSearchResultSchema = z.object({
   id: z.number(),
   symbol: z.string(),
@@ -17,7 +22,6 @@ export const StockSearchResponseSchema = z.object({
   stocks: z.array(StockSearchResultSchema),
 });
 
-// Matches GET /api/portfolio response
 export const PortfolioStockSchema = z.object({
   id: z.number(),
   symbol: z.string(),
@@ -29,6 +33,8 @@ export const PortfolioStockSchema = z.object({
   market_cap: z.number(),
   volume: z.number(),
   added_at: z.string().nullable(),
+  notes: z.string().nullable(),
+  tags: z.array(TagSchema),
 });
 
 export const PortfolioSummarySchema = z.object({
@@ -40,9 +46,9 @@ export const PortfolioSummarySchema = z.object({
 export const PortfolioResponseSchema = z.object({
   stocks: z.array(PortfolioStockSchema),
   summary: PortfolioSummarySchema,
+  all_tags: z.array(TagSchema),
 });
 
-// Matches GET /api/stocks/:symbol response
 export const PriceHistoryPointSchema = z.object({
   date: z.string(),
   open: z.string(),
@@ -71,9 +77,26 @@ export const StockDetailResponseSchema = z.object({
   price_history: z.array(PriceHistoryPointSchema),
 });
 
+export const TagsResponseSchema = z.object({
+  tags: z.array(TagSchema),
+});
+
+export const TagResponseSchema = z.object({
+  tag: TagSchema,
+});
+
+export const NotesUpdateResponseSchema = z.object({
+  message: z.string(),
+  notes: z.string().nullable(),
+});
+
+export type Tag = z.infer<typeof TagSchema>;
 export type StockSearchResult = z.infer<typeof StockSearchResultSchema>;
 export type PortfolioStock = z.infer<typeof PortfolioStockSchema>;
 export type PortfolioSummary = z.infer<typeof PortfolioSummarySchema>;
 export type PortfolioResponse = z.infer<typeof PortfolioResponseSchema>;
 export type PriceHistoryPoint = z.infer<typeof PriceHistoryPointSchema>;
 export type StockDetailResponse = z.infer<typeof StockDetailResponseSchema>;
+export type TagsResponse = z.infer<typeof TagsResponseSchema>;
+export type TagResponse = z.infer<typeof TagResponseSchema>;
+export type NotesUpdateResponse = z.infer<typeof NotesUpdateResponseSchema>;

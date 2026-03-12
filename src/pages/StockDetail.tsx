@@ -19,11 +19,12 @@ import {
   IonSpinner,
   IonText,
 } from '@ionic/react';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useParams, useHistory } from 'react-router-dom';
 import { useStockDetail } from '../hooks/useStocks';
 import { usePortfolio } from '../hooks/usePortfolio';
 import { PriceChart } from '../components/PriceChart';
+import { Tag } from '../types/stock';
 
 const priceContainer = css`
   text-align: center;
@@ -108,6 +109,92 @@ const confirmBtn = css`
   cursor: pointer;
 `;
 
+const notesTextarea = css`
+  width: 100%;
+  min-height: 100px;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  resize: vertical;
+  background: var(--ion-background-color, #fff);
+  color: var(--ion-text-color, #000);
+`;
+
+const tagsContainer = css`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+`;
+
+const tagChip = (color: string, selected: boolean) => css`
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: 2px solid ${color};
+  background: ${selected ? color : 'transparent'};
+  color: ${selected ? '#fff' : color};
+  transition: all 0.15s ease;
+`;
+
+const tagRemove = css`
+  margin-left: 4px;
+  font-size: 1rem;
+  line-height: 1;
+`;
+
+const createTagForm = css`
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+`;
+
+const tagInput = css`
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  background: var(--ion-background-color, #fff);
+  color: var(--ion-text-color, #000);
+`;
+
+const colorInput = css`
+  width: 40px;
+  height: 36px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 2px;
+  cursor: pointer;
+`;
+
+const toastStyle = css`
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #333;
+  color: #fff;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  z-index: 10000;
+  animation: fadeInOut 2.5s ease;
+  @keyframes fadeInOut {
+    0% { opacity: 0; transform: translateX(-50%) translateY(10px); }
+    10% { opacity: 1; transform: translateX(-50%) translateY(0); }
+    90% { opacity: 1; transform: translateX(-50%) translateY(0); }
+    100% { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+  }
+`;
+
 function formatLargeNumber(num: number): string {
   if (num >= 1_000_000_000_000) return `$${(num / 1_000_000_000_000).toFixed(2)}T`;
   if (num >= 1_000_000_000) return `$${(num / 1_000_000_000).toFixed(2)}B`;
@@ -119,8 +206,71 @@ export default function StockDetail() {
   const { symbol } = useParams<{ symbol: string }>();
   const history = useHistory();
   const { data: detail, isLoading, error } = useStockDetail(symbol);
-  const { removeStock, isRemoving } = usePortfolio();
+  const {
+    portfolio,
+    updateNotes,
+    isUpdatingNotes,
+    attachTag,
+    detachTag,
+    isAttachingTag,
+    isDetachingTag,
+    createTag,
+    isCreatingTag,
+    removeStock,
+    isRemoving,
+  } = usePortfolio();
   const [showConfirm, setShowConfirm] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+  const notesRef = useRef<HTMLTextAreaElement>(null);
+  const newTagNameRef = useRef<HTMLInputElement>(null);
+  const newTagColorRef = useRef<HTMLInputElement>(null);
+
+  const portfolioStock = portfolio?.stocks.find((s) => s.symbol.toUpperCase() === symbol.toUpperCase());
+  const allTags = portfolio?.all_tags || [];
+  const stockTags = portfolioStock?.tags || [];
+
+  const showToast = (msg: string) => {
+    setToast(msg);
+    setTimeout(() => setToast(null), 2500);
+  };
+
+  const handleSaveNotes = async () => {
+    const notes = notesRef.current?.value || '';
+    try {
+      await updateNotes({ symbol, notes: notes || null });
+      showToast('Notes saved');
+    } catch {
+      showToast('Failed to save notes');
+    }
+  };
+
+  const handleTagClick = async (tag: Tag) => {
+    const isAttached = stockTags.some((t) => t.id === tag.id);
+    try {
+      if (isAttached) {
+        await detachTag({ symbol, tagId: tag.id });
+        showToast('Tag removed');
+      } else {
+        await attachTag({ symbol, tagId: tag.id });
+        showToast('Tag added');
+      }
+    } catch {
+      showToast('Failed to update tag');
+    }
+  };
+
+  const handleCreateTag = async () => {
+    const name = newTagNameRef.current?.value?.trim();
+    const color = newTagColorRef.current?.value || '#6200ea';
+    if (!name) return;
+    try {
+      await createTag({ name, color });
+      if (newTagNameRef.current) newTagNameRef.current.value = '';
+      showToast('Tag created');
+    } catch {
+      showToast('Failed to create tag');
+    }
+  };
 
   const handleRemove = async () => {
     setShowConfirm(false);
@@ -128,7 +278,7 @@ export default function StockDetail() {
       await removeStock(symbol);
       history.replace('/dashboard');
     } catch {
-      // ignore
+      showToast('Failed to remove stock');
     }
   };
 
@@ -244,6 +394,75 @@ export default function StockDetail() {
           </IonCardContent>
         </IonCard>
 
+        <IonCard>
+          <IonCardHeader>
+            <IonCardTitle style={{ fontSize: '1rem' }}>Notes</IonCardTitle>
+          </IonCardHeader>
+          <IonCardContent>
+            <textarea
+              ref={notesRef}
+              css={notesTextarea}
+              placeholder="Add your investment thesis, observations, or reminders..."
+              defaultValue={portfolioStock?.notes || ''}
+            />
+            <div style={{ marginTop: '12px' }}>
+              <IonButton
+                size="small"
+                onClick={handleSaveNotes}
+                style={isUpdatingNotes ? { opacity: 0.5, pointerEvents: 'none' } : undefined}
+              >
+                {isUpdatingNotes ? <IonSpinner name="dots" /> : 'Save Notes'}
+              </IonButton>
+            </div>
+          </IonCardContent>
+        </IonCard>
+
+        <IonCard>
+          <IonCardHeader>
+            <IonCardTitle style={{ fontSize: '1rem' }}>Tags</IonCardTitle>
+          </IonCardHeader>
+          <IonCardContent>
+            {allTags.length > 0 && (
+              <div css={tagsContainer}>
+                {allTags.map((tag) => {
+                  const isSelected = stockTags.some((t) => t.id === tag.id);
+                  return (
+                    <span
+                      key={tag.id}
+                      css={tagChip(tag.color, isSelected)}
+                      onClick={() => !isAttachingTag && !isDetachingTag && handleTagClick(tag)}
+                    >
+                      {tag.name}
+                    </span>
+                  );
+                })}
+              </div>
+            )}
+            <div css={createTagForm}>
+              <input
+                ref={newTagNameRef}
+                type="text"
+                css={tagInput}
+                placeholder="New tag name"
+                maxLength={50}
+              />
+              <input
+                ref={newTagColorRef}
+                type="color"
+                css={colorInput}
+                defaultValue="#6200ea"
+              />
+              <IonButton
+                size="small"
+                onClick={handleCreateTag}
+                style={isCreatingTag ? { opacity: 0.5, pointerEvents: 'none' } : undefined}
+              >
+                {isCreatingTag ? <IonSpinner name="dots" /> : 'Add'}
+              </IonButton>
+            </div>
+          </IonCardContent>
+        </IonCard>
+
         <div style={{ padding: '16px' }}>
           <IonButton
             expand="block"
@@ -280,6 +499,8 @@ export default function StockDetail() {
             </div>
           </div>
         )}
+
+        {toast && <div key={toast} css={toastStyle}>{toast}</div>}
       </IonContent>
     </IonPage>
   );
