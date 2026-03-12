@@ -29,6 +29,8 @@ export const PortfolioStockSchema = z.object({
   market_cap: z.number(),
   volume: z.number(),
   added_at: z.string().nullable(),
+  note: z.string().nullable(),
+  tags: z.array(z.string()),
 });
 
 export const PortfolioSummarySchema = z.object({

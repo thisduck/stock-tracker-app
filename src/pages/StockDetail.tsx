@@ -19,7 +19,7 @@ import {
   IonSpinner,
   IonText,
 } from '@ionic/react';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useParams, useHistory } from 'react-router-dom';
 import { useStockDetail } from '../hooks/useStocks';
 import { usePortfolio } from '../hooks/usePortfolio';
@@ -108,6 +108,55 @@ const confirmBtn = css`
   cursor: pointer;
 `;
 
+const editorCard = css`
+  margin: 16px;
+  padding: 16px;
+  border-radius: 12px;
+  background: #f6f8fc;
+`;
+
+const fieldLabel = css`
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #30406b;
+  margin-bottom: 6px;
+`;
+
+const textAreaStyle = css`
+  width: 100%;
+  min-height: 90px;
+  border: 1px solid #cfd9ee;
+  border-radius: 8px;
+  padding: 10px;
+  resize: vertical;
+  font-size: 0.9rem;
+`;
+
+const inputStyle = css`
+  width: 100%;
+  border: 1px solid #cfd9ee;
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 0.9rem;
+`;
+
+const helperStyle = css`
+  font-size: 0.75rem;
+  color: #65708f;
+  margin-top: 6px;
+`;
+
+const saveRow = css`
+  margin-top: 12px;
+`;
+
+const saveStatus = css`
+  font-size: 0.82rem;
+  margin-top: 8px;
+  color: #3559b8;
+`;
+
 function formatLargeNumber(num: number): string {
   if (num >= 1_000_000_000_000) return `$${(num / 1_000_000_000_000).toFixed(2)}T`;
   if (num >= 1_000_000_000) return `$${(num / 1_000_000_000).toFixed(2)}B`;
@@ -119,8 +168,28 @@ export default function StockDetail() {
   const { symbol } = useParams<{ symbol: string }>();
   const history = useHistory();
   const { data: detail, isLoading, error } = useStockDetail(symbol);
-  const { removeStock, isRemoving } = usePortfolio();
+  const {
+    portfolio,
+    removeStock,
+    updateNotesTags,
+    isRemoving,
+    isUpdatingNotesTags,
+  } = usePortfolio();
   const [showConfirm, setShowConfirm] = useState(false);
+  const [noteDraft, setNoteDraft] = useState('');
+  const [tagsDraft, setTagsDraft] = useState('');
+  const [saveMessage, setSaveMessage] = useState<string | null>(null);
+
+  const portfolioStock = useMemo(
+    () => portfolio?.stocks.find((portfolioItem) => portfolioItem.symbol === symbol) ?? null,
+    [portfolio, symbol]
+  );
+
+  useEffect(() => {
+    if (!portfolioStock) return;
+    setNoteDraft(portfolioStock.note ?? '');
+    setTagsDraft(portfolioStock.tags.join(', '));
+  }, [portfolioStock]);
 
   const handleRemove = async () => {
     setShowConfirm(false);
@@ -129,6 +198,27 @@ export default function StockDetail() {
       history.replace('/dashboard');
     } catch {
       // ignore
+    }
+  };
+
+  const handleSaveNotesAndTags = async () => {
+    try {
+      const parsedTags = tagsDraft
+        .split(',')
+        .map((tag) => tag.trim())
+        .filter((tag) => tag.length > 0);
+
+      await updateNotesTags({
+        symbol,
+        note: noteDraft,
+        tags: parsedTags,
+      });
+
+      setSaveMessage('Saved');
+      setTimeout(() => setSaveMessage(null), 2000);
+    } catch {
+      setSaveMessage('Failed to save');
+      setTimeout(() => setSaveMessage(null), 2500);
     }
   };
 
@@ -245,6 +335,41 @@ export default function StockDetail() {
         </IonCard>
 
         <div style={{ padding: '16px' }}>
+          <div css={editorCard}>
+            <label css={fieldLabel} htmlFor="note-input">Personal note</label>
+            <textarea
+              id="note-input"
+              css={textAreaStyle}
+              value={noteDraft}
+              onChange={(e) => setNoteDraft(e.currentTarget.value)}
+              placeholder="Write your reasoning, risks, or reminders..."
+            />
+
+            <label css={fieldLabel} htmlFor="tags-input" style={{ marginTop: '12px' }}>
+              Tags
+            </label>
+            <input
+              id="tags-input"
+              css={inputStyle}
+              type="text"
+              value={tagsDraft}
+              onChange={(e) => setTagsDraft(e.currentTarget.value)}
+              placeholder="growth, long-term, earnings-watch"
+            />
+            <div css={helperStyle}>Use commas to separate tags.</div>
+
+            <div css={saveRow}>
+              <IonButton
+                fill="solid"
+                onClick={handleSaveNotesAndTags}
+                style={isUpdatingNotesTags ? { opacity: 0.5, pointerEvents: 'none' } : undefined}
+              >
+                {isUpdatingNotesTags ? <IonSpinner name="dots" /> : 'Save Note & Tags'}
+              </IonButton>
+              {saveMessage && <div css={saveStatus}>{saveMessage}</div>}
+            </div>
+          </div>
+
           <IonButton
             expand="block"
             color="danger"

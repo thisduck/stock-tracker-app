@@ -1,5 +1,6 @@
 /** @jsxImportSource @emotion/react */
 import { css } from '@emotion/react';
+import { useMemo, useState } from 'react';
 import {
   IonPage,
   IonHeader,
@@ -39,11 +40,47 @@ const emptyStyle = css`
   padding: 0 32px;
 `;
 
+const filterRow = css`
+  display: flex;
+  gap: 8px;
+  padding: 4px 16px 8px;
+  overflow-x: auto;
+`;
+
+const filterChip = (active: boolean) => css`
+  border: 1px solid ${active ? '#2158c9' : '#c8d2ea'};
+  background: ${active ? '#2158c9' : '#ffffff'};
+  color: ${active ? '#ffffff' : '#2f3d66'};
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+`;
+
 export default function Dashboard() {
   const { portfolio, isLoading, error } = usePortfolio();
   const { logout } = useAuth();
   const history = useHistory();
   const queryClient = useQueryClient();
+  const [selectedTag, setSelectedTag] = useState('all');
+
+  const availableTags = useMemo(() => {
+    if (!portfolio) return [];
+    const tags = new Set<string>();
+    for (const stock of portfolio.stocks) {
+      for (const tag of stock.tags) {
+        tags.add(tag);
+      }
+    }
+    return Array.from(tags).sort();
+  }, [portfolio]);
+
+  const visibleStocks = useMemo(() => {
+    if (!portfolio) return [];
+    if (selectedTag === 'all') return portfolio.stocks;
+    return portfolio.stocks.filter((stock) => stock.tags.includes(selectedTag));
+  }, [portfolio, selectedTag]);
 
   const handleStockClick = (symbol: string) => {
     history.push(`/stock/${symbol}`);
@@ -104,13 +141,34 @@ export default function Dashboard() {
         {portfolio && portfolio.stocks.length > 0 && (
           <>
             <PortfolioSummary portfolio={portfolio} />
-            {portfolio.stocks.map((stock) => (
+
+            <div css={filterRow}>
+              <button css={filterChip(selectedTag === 'all')} onClick={() => setSelectedTag('all')}>
+                All
+              </button>
+              {availableTags.map((tag) => (
+                <button key={tag} css={filterChip(selectedTag === tag)} onClick={() => setSelectedTag(tag)}>
+                  {tag}
+                </button>
+              ))}
+            </div>
+
+            {visibleStocks.map((stock) => (
               <StockCard
                 key={stock.symbol}
                 stock={stock}
                 onClick={handleStockClick}
               />
             ))}
+
+            {visibleStocks.length === 0 && (
+              <div css={emptyStyle}>
+                <IonText color="medium">
+                  <h2>No stocks for this tag</h2>
+                  <p>Choose another tag or select All.</p>
+                </IonText>
+              </div>
+            )}
           </>
         )}
 
