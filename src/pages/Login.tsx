@@ -29,15 +29,20 @@ const titleStyle = css`
   font-size: 2rem;
   font-weight: 700;
   color: var(--ion-color-primary);
-  padding-bottom: 8px;
-  border-bottom: 2px solid var(--ion-color-primary);
-  display: inline-block;
+  margin-bottom: 12px;
+`;
+
+const dividerLine = css`
+  width: 100%;
+  height: 2px;
+  background: var(--ion-color-medium, #ccc);
+  margin: 12px 0;
 `;
 
 const subtitleStyle = css`
   font-size: 0.9rem;
   color: #888;
-  margin-top: 4px;
+  margin-top: 12px;
 `;
 
 const errorStyle = css`
@@ -123,6 +128,7 @@ export default function Login() {
         <div css={formContainer}>
           <div css={logoStyle}>
             <div css={titleStyle}>Stock Tracker</div>
+            <div css={dividerLine}></div>
             <div css={subtitleStyle}>Monitor your portfolio</div>
           </div>
 
