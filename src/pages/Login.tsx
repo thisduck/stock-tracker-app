@@ -29,6 +29,9 @@ const titleStyle = css`
   font-size: 2rem;
   font-weight: 700;
   color: var(--ion-color-primary);
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--ion-color-primary);
+  display: inline-block;
 `;
 
 const subtitleStyle = css`
@@ -152,6 +155,7 @@ export default function Login() {
 
           <IonButton
             expand="block"
+            color="success"
             disabled={loginLoading}
             style={{ marginTop: '24px' }}
             onClick={handleLogin}
