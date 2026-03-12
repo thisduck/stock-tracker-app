@@ -19,7 +19,7 @@ import {
   IonSpinner,
   IonText,
 } from '@ionic/react';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useParams, useHistory } from 'react-router-dom';
 import { useStockDetail } from '../hooks/useStocks';
 import { usePortfolio } from '../hooks/usePortfolio';
@@ -108,6 +108,71 @@ const confirmBtn = css`
   cursor: pointer;
 `;
 
+const notesTextarea = css`
+  width: 100%;
+  min-height: 100px;
+  padding: 12px;
+  font-size: 1rem;
+  border: 1px solid var(--ion-color-medium, #999);
+  border-radius: 8px;
+  background: var(--ion-background-color, #fff);
+  color: var(--ion-text-color, #000);
+  font-family: inherit;
+  resize: vertical;
+  box-sizing: border-box;
+  &:focus {
+    outline: none;
+    border-color: var(--ion-color-primary);
+    box-shadow: 0 0 0 2px rgba(56, 128, 255, 0.2);
+  }
+`;
+
+const notesActions = css`
+  display: flex;
+  gap: 12px;
+  margin-top: 12px;
+  justify-content: flex-end;
+`;
+
+const saveBtn = css`
+  padding: 8px 20px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  background: var(--ion-color-success, #4caf50);
+  color: white;
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+`;
+
+const toastStyle = css`
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  z-index: 10000;
+  animation: slideUp 0.3s ease-out;
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateX(-50%) translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+  }
+`;
+
 function formatLargeNumber(num: number): string {
   if (num >= 1_000_000_000_000) return `$${(num / 1_000_000_000_000).toFixed(2)}T`;
   if (num >= 1_000_000_000) return `$${(num / 1_000_000_000).toFixed(2)}B`;
@@ -119,8 +184,22 @@ export default function StockDetail() {
   const { symbol } = useParams<{ symbol: string }>();
   const history = useHistory();
   const { data: detail, isLoading, error } = useStockDetail(symbol);
-  const { removeStock, isRemoving } = usePortfolio();
+  const { portfolio, removeStock, isRemoving, updateNotes, isUpdatingNotes } = usePortfolio();
   const [showConfirm, setShowConfirm] = useState(false);
+  const [toast, setToast] = useState<{ message: string; key: number } | null>(null);
+  const notesRef = useRef<HTMLTextAreaElement>(null);
+
+  // Find current stock in portfolio to get notes
+  const portfolioStock = portfolio?.stocks.find(
+    (s) => s.symbol.toUpperCase() === symbol.toUpperCase()
+  );
+
+  // Initialize textarea with current notes
+  useEffect(() => {
+    if (notesRef.current && portfolioStock) {
+      notesRef.current.value = portfolioStock.notes || '';
+    }
+  }, [portfolioStock]);
 
   const handleRemove = async () => {
     setShowConfirm(false);
@@ -129,6 +208,18 @@ export default function StockDetail() {
       history.replace('/dashboard');
     } catch {
       // ignore
+    }
+  };
+
+  const handleSaveNotes = async () => {
+    const notes = notesRef.current?.value || '';
+    try {
+      await updateNotes({ symbol, notes });
+      setToast({ message: 'Notes saved successfully', key: Date.now() });
+      setTimeout(() => setToast(null), 2600);
+    } catch {
+      setToast({ message: 'Failed to save notes', key: Date.now() });
+      setTimeout(() => setToast(null), 2600);
     }
   };
 
@@ -244,6 +335,28 @@ export default function StockDetail() {
           </IonCardContent>
         </IonCard>
 
+        <IonCard>
+          <IonCardHeader>
+            <IonCardTitle style={{ fontSize: '1rem' }}>Notes</IonCardTitle>
+          </IonCardHeader>
+          <IonCardContent>
+            <textarea
+              ref={notesRef}
+              css={notesTextarea}
+              placeholder="Add notes about this stock..."
+            />
+            <div css={notesActions}>
+              <button
+                css={saveBtn}
+                onClick={handleSaveNotes}
+                disabled={isUpdatingNotes}
+              >
+                {isUpdatingNotes ? 'Saving...' : 'Save Notes'}
+              </button>
+            </div>
+          </IonCardContent>
+        </IonCard>
+
         <div style={{ padding: '16px' }}>
           <IonButton
             expand="block"
@@ -278,6 +391,12 @@ export default function StockDetail() {
                 </button>
               </div>
             </div>
+          </div>
+        )}
+
+        {toast && (
+          <div key={toast.key} css={toastStyle}>
+            {toast.message}
           </div>
         )}
       </IonContent>

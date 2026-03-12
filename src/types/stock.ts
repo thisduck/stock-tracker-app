@@ -28,6 +28,7 @@ export const PortfolioStockSchema = z.object({
   daily_change_percent: z.string(),
   market_cap: z.number(),
   volume: z.number(),
+  notes: z.string().nullable(),
   added_at: z.string().nullable(),
 });
 
