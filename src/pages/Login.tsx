@@ -120,6 +120,7 @@ export default function Login() {
         <div css={formContainer}>
           <div css={logoStyle}>
             <div css={titleStyle}>Stock Tracker</div>
+            <div css={css`width: 60px; height: 3px; background: var(--ion-color-primary); margin: 12px auto 0; border-radius: 2px;`} />
             <div css={subtitleStyle}>Monitor your portfolio</div>
           </div>
 
@@ -152,6 +153,7 @@ export default function Login() {
 
           <IonButton
             expand="block"
+            color="success"
             disabled={loginLoading}
             style={{ marginTop: '24px' }}
             onClick={handleLogin}
