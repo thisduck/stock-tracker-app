@@ -37,6 +37,17 @@ const subtitleStyle = css`
   margin-top: 4px;
 `;
 
+const introMessageStyle = css`
+  margin-bottom: 28px;
+  padding: 18px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(56, 128, 255, 0.12), rgba(16, 29, 92, 0.1));
+  border: 1px solid rgba(56, 128, 255, 0.2);
+  color: rgba(7, 11, 40, 0.85);
+  line-height: 1.5;
+  font-size: 0.95rem;
+`;
+
 const errorStyle = css`
   margin: 12px 0;
   padding: 8px 12px;
@@ -121,6 +132,13 @@ export default function Login() {
           <div css={logoStyle}>
             <div css={titleStyle}>Stock Tracker</div>
             <div css={subtitleStyle}>Monitor your portfolio</div>
+          </div>
+
+          <div css={introMessageStyle}>
+            <strong>Know what matters before the bell rings.</strong>
+            <div>
+              Sign in to get a pulse on your holdings, daily movers, and actionable signals in one glance.
+            </div>
           </div>
 
           <div css={fieldGroup}>
