@@ -19,7 +19,7 @@ import {
   IonSpinner,
   IonText,
 } from '@ionic/react';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useParams, useHistory } from 'react-router-dom';
 import { useStockDetail } from '../hooks/useStocks';
 import { usePortfolio } from '../hooks/usePortfolio';
@@ -108,6 +108,40 @@ const confirmBtn = css`
   cursor: pointer;
 `;
 
+const notesTextarea = css`
+  width: 100%;
+  min-height: 100px;
+  padding: 12px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  border: 1px solid var(--ion-color-medium, #ccc);
+  border-radius: 8px;
+  background: var(--ion-background-color, #fff);
+  color: var(--ion-text-color, #000);
+  outline: none;
+  box-sizing: border-box;
+  resize: vertical;
+  &:focus {
+    border-color: var(--ion-color-primary);
+    box-shadow: 0 0 0 2px rgba(56, 128, 255, 0.2);
+  }
+`;
+
+const saveNotesBtn = css`
+  margin-top: 8px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  border: none;
+  background: var(--ion-color-primary);
+  color: white;
+  cursor: pointer;
+  &:hover {
+    opacity: 0.8;
+  }
+`;
+
 function formatLargeNumber(num: number): string {
   if (num >= 1_000_000_000_000) return `$${(num / 1_000_000_000_000).toFixed(2)}T`;
   if (num >= 1_000_000_000) return `$${(num / 1_000_000_000).toFixed(2)}B`;
@@ -119,8 +153,9 @@ export default function StockDetail() {
   const { symbol } = useParams<{ symbol: string }>();
   const history = useHistory();
   const { data: detail, isLoading, error } = useStockDetail(symbol);
-  const { removeStock, isRemoving } = usePortfolio();
+  const { portfolio, removeStock, isRemoving, updateNotes, isUpdatingNotes } = usePortfolio();
   const [showConfirm, setShowConfirm] = useState(false);
+  const notesRef = useRef<HTMLTextAreaElement>(null);
 
   const handleRemove = async () => {
     setShowConfirm(false);
@@ -131,6 +166,18 @@ export default function StockDetail() {
       // ignore
     }
   };
+
+  const handleSaveNotes = async () => {
+    const notes = notesRef.current?.value || null;
+    try {
+      await updateNotes({ symbol, notes });
+    } catch {
+      // ignore
+    }
+  };
+
+  const currentStock = portfolio?.stocks.find((s) => s.symbol === symbol);
+  const currentNotes = currentStock?.notes || '';
 
   if (isLoading) {
     return (
@@ -241,6 +288,27 @@ export default function StockDetail() {
                 <IonLabel slot="end" css={statValue}>{stock.sector}</IonLabel>
               </IonItem>
             </IonList>
+          </IonCardContent>
+        </IonCard>
+
+        <IonCard>
+          <IonCardHeader>
+            <IonCardTitle style={{ fontSize: '1rem' }}>Notes</IonCardTitle>
+          </IonCardHeader>
+          <IonCardContent>
+            <textarea
+              ref={notesRef}
+              css={notesTextarea}
+              placeholder="Add your notes about this stock..."
+              defaultValue={currentNotes}
+            />
+            <button
+              css={saveNotesBtn}
+              onClick={handleSaveNotes}
+              style={isUpdatingNotes ? { opacity: 0.5, pointerEvents: 'none' } : undefined}
+            >
+              {isUpdatingNotes ? 'Saving...' : 'Save Notes'}
+            </button>
           </IonCardContent>
         </IonCard>
 
