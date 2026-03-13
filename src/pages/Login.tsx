@@ -31,10 +31,17 @@ const titleStyle = css`
   color: var(--ion-color-primary);
 `;
 
+const dividerStyle = css`
+  width: 60px;
+  height: 3px;
+  background: #333;
+  margin: 12px auto 0;
+`;
+
 const subtitleStyle = css`
   font-size: 0.9rem;
   color: #888;
-  margin-top: 4px;
+  margin-top: 12px;
 `;
 
 const errorStyle = css`
@@ -120,6 +127,7 @@ export default function Login() {
         <div css={formContainer}>
           <div css={logoStyle}>
             <div css={titleStyle}>Stock Tracker</div>
+            <div css={dividerStyle} />
             <div css={subtitleStyle}>Monitor your portfolio</div>
           </div>
 
@@ -152,8 +160,8 @@ export default function Login() {
 
           <IonButton
             expand="block"
-            disabled={loginLoading}
-            style={{ marginTop: '24px' }}
+            color="success"
+            style={{ marginTop: '24px', ...(loginLoading ? { opacity: 0.5, pointerEvents: 'none' } : {}) }}
             onClick={handleLogin}
           >
             {loginLoading ? <IonSpinner name="dots" /> : 'Sign In'}
