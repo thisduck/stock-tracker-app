@@ -19,7 +19,7 @@ import {
   IonSpinner,
   IonText,
 } from '@ionic/react';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useParams, useHistory } from 'react-router-dom';
 import { useStockDetail } from '../hooks/useStocks';
 import { usePortfolio } from '../hooks/usePortfolio';
@@ -108,6 +108,50 @@ const confirmBtn = css`
   cursor: pointer;
 `;
 
+const notesContainer = css`
+  margin: 16px 0;
+`;
+
+const notesTextarea = css`
+  width: 100%;
+  min-height: 100px;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  resize: vertical;
+  background: var(--ion-background-color, #fff);
+  color: var(--ion-text-color, #000);
+  &:focus {
+    outline: none;
+    border-color: var(--ion-color-primary, #3880ff);
+  }
+`;
+
+const notesLabel = css`
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+  display: block;
+  color: var(--ion-text-color, #000);
+`;
+
+const notesActions = css`
+  display: flex;
+  gap: 12px;
+  margin-top: 12px;
+`;
+
+const notesBtn = css`
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+`;
+
 function formatLargeNumber(num: number): string {
   if (num >= 1_000_000_000_000) return `$${(num / 1_000_000_000_000).toFixed(2)}T`;
   if (num >= 1_000_000_000) return `$${(num / 1_000_000_000).toFixed(2)}B`;
@@ -119,14 +163,37 @@ export default function StockDetail() {
   const { symbol } = useParams<{ symbol: string }>();
   const history = useHistory();
   const { data: detail, isLoading, error } = useStockDetail(symbol);
-  const { removeStock, isRemoving } = usePortfolio();
+  const { portfolio, removeStock, updateNotes, isRemoving, isUpdatingNotes } = usePortfolio();
   const [showConfirm, setShowConfirm] = useState(false);
+  const [isEditingNotes, setIsEditingNotes] = useState(false);
+  const notesRef = useRef<HTMLTextAreaElement>(null);
+  
+  // Find the stock in portfolio to get notes
+  const portfolioStock = portfolio?.stocks.find(s => s.symbol.toUpperCase() === symbol.toUpperCase());
+  const currentNotes = portfolioStock?.notes || '';
+  
+  // Set initial notes value when editing starts
+  useEffect(() => {
+    if (isEditingNotes && notesRef.current) {
+      notesRef.current.value = currentNotes;
+    }
+  }, [isEditingNotes, currentNotes]);
 
   const handleRemove = async () => {
     setShowConfirm(false);
     try {
       await removeStock(symbol);
       history.replace('/dashboard');
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleSaveNotes = async () => {
+    const notes = notesRef.current?.value || '';
+    try {
+      await updateNotes({ symbol, notes });
+      setIsEditingNotes(false);
     } catch {
       // ignore
     }
@@ -243,6 +310,68 @@ export default function StockDetail() {
             </IonList>
           </IonCardContent>
         </IonCard>
+
+        {portfolioStock && (
+          <IonCard>
+            <IonCardHeader>
+              <IonCardTitle style={{ fontSize: '1rem' }}>Notes</IonCardTitle>
+            </IonCardHeader>
+            <IonCardContent>
+              <div css={notesContainer}>
+                {isEditingNotes ? (
+                  <>
+                    <textarea
+                      ref={notesRef}
+                      css={notesTextarea}
+                      placeholder="Add your notes about this stock..."
+                      maxLength={5000}
+                    />
+                    <div css={notesActions}>
+                      <button
+                        css={[notesBtn, css`background: #e0e0e0; color: #333;` as any]}
+                        onClick={() => setIsEditingNotes(false)}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        css={[notesBtn, css`background: var(--ion-color-primary, #3880ff); color: white;` as any]}
+                        onClick={handleSaveNotes}
+                        disabled={isUpdatingNotes}
+                        style={isUpdatingNotes ? { opacity: 0.5, pointerEvents: 'none' } : undefined}
+                      >
+                        {isUpdatingNotes ? 'Saving...' : 'Save Notes'}
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div css={notesLabel}>
+                      {currentNotes ? 'Your notes:' : 'No notes yet'}
+                    </div>
+                    {currentNotes && (
+                      <div style={{ 
+                        whiteSpace: 'pre-wrap', 
+                        fontSize: '0.95rem',
+                        lineHeight: '1.5',
+                        color: 'var(--ion-text-color, #000)'
+                      }}>
+                        {currentNotes}
+                      </div>
+                    )}
+                    <div css={notesActions}>
+                      <button
+                        css={[notesBtn, css`background: var(--ion-color-primary, #3880ff); color: white;` as any]}
+                        onClick={() => setIsEditingNotes(true)}
+                      >
+                        {currentNotes ? 'Edit Notes' : 'Add Notes'}
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            </IonCardContent>
+          </IonCard>
+        )}
 
         <div style={{ padding: '16px' }}>
           <IonButton
