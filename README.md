@@ -1,5 +1,7 @@
 # Stock Tracker App
 
+Hello World
+
 Ionic React frontend for the Stock Tracker demo app. Built with Capacitor, Cordova, and a modern React stack targeting web.
 
 ## Tech Stack
