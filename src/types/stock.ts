@@ -42,6 +42,16 @@ export const PortfolioResponseSchema = z.object({
   summary: PortfolioSummarySchema,
 });
 
+export const StockNoteSchema = z.object({
+  id: z.number(),
+  note: z.string(),
+  created_at: z.string().nullable(),
+});
+
+export const StockNotesResponseSchema = z.object({
+  notes: z.array(StockNoteSchema),
+});
+
 // Matches GET /api/stocks/:symbol response
 export const PriceHistoryPointSchema = z.object({
   date: z.string(),
@@ -75,5 +85,6 @@ export type StockSearchResult = z.infer<typeof StockSearchResultSchema>;
 export type PortfolioStock = z.infer<typeof PortfolioStockSchema>;
 export type PortfolioSummary = z.infer<typeof PortfolioSummarySchema>;
 export type PortfolioResponse = z.infer<typeof PortfolioResponseSchema>;
+export type StockNote = z.infer<typeof StockNoteSchema>;
 export type PriceHistoryPoint = z.infer<typeof PriceHistoryPointSchema>;
 export type StockDetailResponse = z.infer<typeof StockDetailResponseSchema>;

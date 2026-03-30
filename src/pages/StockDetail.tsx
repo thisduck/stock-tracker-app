@@ -22,7 +22,7 @@ import {
 import { useState } from 'react';
 import { useParams, useHistory } from 'react-router-dom';
 import { useStockDetail } from '../hooks/useStocks';
-import { usePortfolio } from '../hooks/usePortfolio';
+import { usePortfolio, useStockNotes } from '../hooks/usePortfolio';
 import { PriceChart } from '../components/PriceChart';
 
 const priceContainer = css`
@@ -108,6 +108,46 @@ const confirmBtn = css`
   cursor: pointer;
 `;
 
+const notesCardContent = css`
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+`;
+
+const noteInput = css`
+  width: 100%;
+  min-height: 88px;
+  border: 1px solid #c7c7c7;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 0.95rem;
+  resize: vertical;
+  background: var(--ion-background-color, #fff);
+  color: var(--ion-text-color, #000);
+  &:focus {
+    outline: none;
+    border-color: var(--ion-color-primary);
+  }
+`;
+
+const noteMeta = css`
+  margin-top: 4px;
+  font-size: 0.75rem;
+  color: #777;
+`;
+
+const emptyNotes = css`
+  font-size: 0.9rem;
+  color: #777;
+`;
+
+function formatDateTime(value: string | null): string {
+  if (!value) return 'Unknown time';
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return 'Unknown time';
+  return parsed.toLocaleString();
+}
+
 function formatLargeNumber(num: number): string {
   if (num >= 1_000_000_000_000) return `$${(num / 1_000_000_000_000).toFixed(2)}T`;
   if (num >= 1_000_000_000) return `$${(num / 1_000_000_000).toFixed(2)}B`;
@@ -120,13 +160,34 @@ export default function StockDetail() {
   const history = useHistory();
   const { data: detail, isLoading, error } = useStockDetail(symbol);
   const { removeStock, isRemoving } = usePortfolio();
+  const {
+    notes,
+    isLoading: notesLoading,
+    addNote,
+    isAdding: isAddingNote,
+  } = useStockNotes(symbol);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [noteText, setNoteText] = useState('');
 
   const handleRemove = async () => {
     setShowConfirm(false);
     try {
       await removeStock(symbol);
       history.replace('/dashboard');
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleAddNote = async () => {
+    const cleaned = noteText.trim();
+    if (!cleaned || isAddingNote) {
+      return;
+    }
+
+    try {
+      await addNote(cleaned);
+      setNoteText('');
     } catch {
       // ignore
     }
@@ -241,6 +302,39 @@ export default function StockDetail() {
                 <IonLabel slot="end" css={statValue}>{stock.sector}</IonLabel>
               </IonItem>
             </IonList>
+          </IonCardContent>
+        </IonCard>
+
+        <IonCard>
+          <IonCardHeader>
+            <IonCardTitle style={{ fontSize: '1rem' }}>Notes</IonCardTitle>
+          </IonCardHeader>
+          <IonCardContent css={notesCardContent}>
+            <textarea
+              css={noteInput}
+              value={noteText}
+              onChange={(e) => setNoteText(e.target.value)}
+              maxLength={1000}
+              placeholder={`Add a note about ${stock.symbol}...`}
+            />
+            <IonButton
+              onClick={handleAddNote}
+              style={!noteText.trim() || isAddingNote ? { opacity: 0.5, pointerEvents: 'none' } : undefined}
+            >
+              {isAddingNote ? <IonSpinner name="dots" /> : 'Save Note'}
+            </IonButton>
+            {notesLoading && <IonSpinner name="crescent" />}
+            {!notesLoading && notes.length === 0 && (
+              <div css={emptyNotes}>No notes yet.</div>
+            )}
+            {!notesLoading && notes.map((entry) => (
+              <IonItem key={entry.id} lines="full">
+                <IonLabel>
+                  <p>{entry.note}</p>
+                  <p css={noteMeta}>{formatDateTime(entry.created_at)}</p>
+                </IonLabel>
+              </IonItem>
+            ))}
           </IonCardContent>
         </IonCard>
 
