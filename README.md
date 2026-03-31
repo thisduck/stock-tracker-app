@@ -86,3 +86,4 @@ Ionic React frontend for the Stock Tracker demo app. Built with Capacitor, Cordo
 - This is a **web-only** app. Capacitor and Cordova are included as dependencies and initialized, but no native platform builds are configured.
 - The SVG price chart in Stock Detail is hand-built (no charting library).
 - Capacitor config (`capacitor.config.ts`) points `webDir` to `dist/`.
+hello world initial-two-repos,-later-one-repo-1774929501525 stock-tracker-app
