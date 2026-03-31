@@ -87,3 +87,4 @@ Ionic React frontend for the Stock Tracker demo app. Built with Capacitor, Cordo
 - The SVG price chart in Stock Detail is hand-built (no charting library).
 - Capacitor config (`capacitor.config.ts`) points `webDir` to `dist/`.
 hello world initial-two-repos,-later-one-repo-1774929671192 stock-tracker-app
+bye bye world initial-two-repos,-later-one-repo-1774929671192 stock-tracker-app
