@@ -88,3 +88,4 @@ Ionic React frontend for the Stock Tracker demo app. Built with Capacitor, Cordo
 - Capacitor config (`capacitor.config.ts`) points `webDir` to `dist/`.
 
 hello world initial-one-repo,-later-same-repo-1774929593732 stock-tracker-app
+bye bye world initial-one-repo,-later-same-repo-1774929593732 stock-tracker-app
